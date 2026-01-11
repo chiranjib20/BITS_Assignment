@@ -1,126 +1,118 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
 
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import (
     accuracy_score, roc_auc_score, precision_score,
     recall_score, f1_score, matthews_corrcoef,
     confusion_matrix, classification_report
 )
 
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.naive_bayes import GaussianNB
-from sklearn.ensemble import RandomForestClassifier
-from xgboost import XGBClassifier
+from model.data_preprocessing import load_and_preprocess
+from model import (
+    logistic_regression,
+    decision_tree,
+    knn,
+    naive_bayes,
+    random_forest,
+    xgboost_model
+)
 
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-st.set_page_config(page_title="Online Shoppers ML Models", layout="wide")
-
+st.set_page_config(page_title="Online Shoppers ML App", layout="wide")
 st.title("Online Shoppers Purchasing Intention – Classification Models")
 
-# -------------------------------
-# Load dataset directly from UCI
-# -------------------------------
-@st.cache_data
-def load_data():
-    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00468/online_shoppers_intention.csv"
-    return pd.read_csv(url)
+# -----------------------------
+# Load & Train on FULL UCI DATA
+# -----------------------------
+X_train, X_internal_test, y_train, y_internal_test, scaler, encoders = load_and_preprocess(return_objects=True)
 
-df = load_data()
-st.success("Dataset loaded directly from UCI Machine Learning Repository")
-
-st.subheader("Dataset Preview")
-st.dataframe(df.head())
-
-# -------------------------------
-# Preprocessing
-# -------------------------------
-le = LabelEncoder()
-for col in df.select_dtypes(include=["object"]).columns:
-    df[col] = le.fit_transform(df[col])
-
-X = df.drop("Revenue", axis=1)
-y = df["Revenue"]
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y,
-    test_size=0.2,
-    random_state=42,
-    stratify=y
-)
-
-scaler = StandardScaler()
-X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
-
-# -------------------------------
-# Models
-# -------------------------------
-models = {
-    "Logistic Regression": LogisticRegression(max_iter=1000),
-    "Decision Tree": DecisionTreeClassifier(random_state=42),
-    "KNN": KNeighborsClassifier(n_neighbors=5),
-    "Naive Bayes": GaussianNB(),
-    "Random Forest": RandomForestClassifier(n_estimators=100, random_state=42),
-    "XGBoost": XGBClassifier(
-        use_label_encoder=False,
-        eval_metric="logloss",
-        random_state=42
-    )
+model_map = {
+    "Logistic Regression": logistic_regression,
+    "Decision Tree": decision_tree,
+    "KNN": knn,
+    "Naive Bayes": naive_bayes,
+    "Random Forest": random_forest,
+    "XGBoost": xgboost_model
 }
 
-model_name = st.selectbox("Select ML Model", list(models.keys()))
-model = models[model_name]
+selected_model = st.selectbox("Select Model", model_map.keys())
 
-# -------------------------------
-# Train & Predict
-# -------------------------------
-model.fit(X_train, y_train)
-y_pred = model.predict(X_test)
-y_prob = model.predict_proba(X_test)[:, 1]
+# Train selected model
+results = model_map[selected_model].run_model(
+    X_train, X_internal_test, y_train, y_internal_test
+)
 
-# -------------------------------
-# Metrics
-# -------------------------------
-accuracy = accuracy_score(y_test, y_pred)
-auc = roc_auc_score(y_test, y_prob)
-precision = precision_score(y_test, y_pred)
-recall = recall_score(y_test, y_pred)
-f1 = f1_score(y_test, y_pred)
-mcc = matthews_corrcoef(y_test, y_pred)
+model = results["model"]
 
-st.subheader("Evaluation Metrics")
+st.subheader("Model Performance on Internal Test Set (UCI)")
+st.write(f"Accuracy: {results['accuracy']:.4f}")
+st.write(f"AUC: {results['auc']:.4f}")
+st.write(f"Precision: {results['precision']:.4f}")
+st.write(f"Recall: {results['recall']:.4f}")
+st.write(f"F1 Score: {results['f1']:.4f}")
+st.write(f"MCC: {results['mcc']:.4f}")
 
-col1, col2, col3 = st.columns(3)
-col1.metric("Accuracy", f"{accuracy:.4f}")
-col1.metric("AUC", f"{auc:.4f}")
+# -----------------------------
+# Upload TEST DATA ONLY
+# -----------------------------
+st.markdown("---")
+st.header("Upload External Test Dataset (CSV)")
 
-col2.metric("Precision", f"{precision:.4f}")
-col2.metric("Recall", f"{recall:.4f}")
+uploaded_file = st.file_uploader(
+    "Upload CSV file containing ONLY test data",
+    type=["csv"]
+)
 
-col3.metric("F1 Score", f"{f1:.4f}")
-col3.metric("MCC", f"{mcc:.4f}")
+if uploaded_file:
+    test_df = pd.read_csv(uploaded_file)
 
-# -------------------------------
-# Confusion Matrix
-# -------------------------------
-st.subheader("Confusion Matrix")
-cm = confusion_matrix(y_test, y_pred)
-fig, ax = plt.subplots()
-sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
-ax.set_xlabel("Predicted")
-ax.set_ylabel("Actual")
-st.pyplot(fig)
+    # Encode categorical columns using TRAIN encoders
+    for col, encoder in encoders.items():
+        if col in test_df.columns:
+            test_df[col] = encoder.transform(test_df[col])
 
-# -------------------------------
-# Classification Report
-# -------------------------------
-st.subheader("Classification Report")
-st.text(classification_report(y_test, y_pred))
+    # Separate target if exists
+    y_test_external = None
+    if "Revenue" in test_df.columns:
+        y_test_external = test_df["Revenue"]
+        X_test_external = test_df.drop("Revenue", axis=1)
+    else:
+        X_test_external = test_df
+
+    # Scale using TRAIN scaler
+    X_test_external = scaler.transform(X_test_external)
+
+    # Predictions
+    y_pred = model.predict(X_test_external)
+    y_prob = model.predict_proba(X_test_external)[:, 1]
+
+    st.subheader("Predictions on Uploaded Test Data")
+    st.write(pd.DataFrame({
+        "Prediction": y_pred,
+        "Probability": y_prob
+    }).head())
+
+    # If ground truth exists → show metrics
+    if y_test_external is not None:
+        st.subheader("Evaluation on Uploaded Test Data")
+
+        st.write(f"Accuracy: {accuracy_score(y_test_external, y_pred):.4f}")
+        st.write(f"AUC: {roc_auc_score(y_test_external, y_prob):.4f}")
+        st.write(f"Precision: {precision_score(y_test_external, y_pred):.4f}")
+        st.write(f"Recall: {recall_score(y_test_external, y_pred):.4f}")
+        st.write(f"F1 Score: {f1_score(y_test_external, y_pred):.4f}")
+        st.write(f"MCC: {matthews_corrcoef(y_test_external, y_pred):.4f}")
+
+        cm = confusion_matrix(y_test_external, y_pred)
+        fig, ax = plt.subplots()
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
+        ax.set_xlabel("Predicted")
+        ax.set_ylabel("Actual")
+        st.pyplot(fig)
+
+        st.text(classification_report(y_test_external, y_pred))
