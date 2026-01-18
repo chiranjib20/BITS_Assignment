@@ -103,8 +103,22 @@ model = models[selected_model_name]
 # --------------------------------------------------
 y_pred = model.predict(X_test)
 
+#if hasattr(model, "predict_proba"):
+#    y_prob = model.predict_proba(X_test)[:, 1]
+#else:
+#    y_prob = None
+
+try:
+    y_pred = model.predict(X_test)
+except Exception as e:
+    st.warning("Standard prediction failed. Using safe XGBoost prediction.")
+    y_pred = model.predict(X_test, validate_features=False)
+
 if hasattr(model, "predict_proba"):
-    y_prob = model.predict_proba(X_test)[:, 1]
+    try:
+        y_prob = model.predict_proba(X_test)[:, 1]
+    except Exception:
+        y_prob = None
 else:
     y_prob = None
 
