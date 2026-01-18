@@ -25,7 +25,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("Online Shoppers Purchasing Intention – Pretrained Models")
+st.title("Online Shoppers Purchasing Intention – Classification Models")
 
 # --------------------------------------------------
 # Load Pretrained Objects
