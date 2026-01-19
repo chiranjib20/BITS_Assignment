@@ -86,6 +86,7 @@ All models are pre-trained offline and loaded during runtime to ensure fast and 
 
 ## Project Structure
 
+```text
 Project-folder/
 │── streamlit_app.py
 │── train_models.py
@@ -101,5 +102,10 @@ Project-folder/
         ├── xgboost.json
         ├── scaler.pkl
         └── encoders.pkl
+```
 
 ## File Usage
+**streamlit_app.py**
+Purpose:
+- Acts as the main user interface of the application.
+- Provides an interactive Streamlit web app for model evaluation and prediction.
