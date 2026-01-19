@@ -86,7 +86,6 @@ All models are pre-trained offline and loaded during runtime to ensure fast and 
 
 ## Project Structure
 
-```text
 Project-folder/
 │── streamlit_app.py
 │── train_models.py
