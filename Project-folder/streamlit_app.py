@@ -1,8 +1,10 @@
+# streamlit_app.py
+
+import joblib
 import streamlit as st
 import pandas as pd
-import joblib
-import numpy as np
-
+import xgboost as xgb
+from xgboost import Booster
 from sklearn.metrics import (
     accuracy_score,
     roc_auc_score,
@@ -10,143 +12,95 @@ from sklearn.metrics import (
     recall_score,
     f1_score,
     matthews_corrcoef,
-    confusion_matrix,
-    classification_report
+    confusion_matrix
 )
 
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-# --------------------------------------------------
-# Streamlit Page Config
-# --------------------------------------------------
 st.set_page_config(
-    page_title="Online Shoppers – Pretrained ML Models",
+    page_title="Online Shoppers Classification",
     layout="wide"
 )
 
-st.title("Online Shoppers Purchasing Intention – Classification Models")
+st.title("🛒 Online Shoppers Purchase Prediction")
 
-# --------------------------------------------------
-# Load Pretrained Objects
-# --------------------------------------------------
+MODEL_DIR = "model/saved_models"
+
+# -----------------------------
+# Load trained artifacts
+# -----------------------------
 @st.cache_resource
 def load_artifacts():
     models = {
-        "Logistic Regression": joblib.load("Project-folder/model/saved_models/logistic.pkl"),
-        "Decision Tree": joblib.load("Project-folder/model/saved_models/decision_tree.pkl"),
-        "KNN": joblib.load("Project-folder/model/saved_models/knn.pkl"),
-        "Naive Bayes": joblib.load("Project-folder/model/saved_models/naive_bayes.pkl"),
-        "Random Forest (Ensemble)": joblib.load("Project-folder/model/saved_models/random_forest.pkl"),
-        "XGBoost (Ensemble)": joblib.load("Project-folder/model/saved_models/xgboost.pkl")
+        "Logistic Regression": joblib.load(f"{MODEL_DIR}/logistic.pkl"),
+        "Decision Tree": joblib.load(f"{MODEL_DIR}/decision_tree.pkl"),
+        "KNN": joblib.load(f"{MODEL_DIR}/knn.pkl"),
+        "Naive Bayes": joblib.load(f"{MODEL_DIR}/naive_bayes.pkl"),
+        "Random Forest": joblib.load(f"{MODEL_DIR}/random_forest.pkl"),
     }
 
-    scaler = joblib.load("Project-folder/model/saved_models/scaler.pkl")
-    encoders = joblib.load("Project-folder/model/saved_models/encoders.pkl")
+    booster = Booster()
+    booster.load_model(f"{MODEL_DIR}/xgboost.json")
 
-    return models, scaler, encoders
+    scaler = joblib.load(f"{MODEL_DIR}/scaler.pkl")
+    encoders = joblib.load(f"{MODEL_DIR}/encoders.pkl")
+
+    return models, booster, scaler, encoders
 
 
-models, scaler, encoders = load_artifacts()
+models, xgb_booster, scaler, encoders = load_artifacts()
 
-# --------------------------------------------------
-# Upload Test Dataset
-# --------------------------------------------------
+# -----------------------------
+# Upload TEST data only
+# -----------------------------
 uploaded_file = st.file_uploader(
-    "Upload TEST dataset (CSV only)",
+    "Upload TEST CSV (must include Revenue column)",
     type=["csv"]
 )
 
-if uploaded_file is None:
-    st.info("Please upload a test dataset to proceed.")
-    st.stop()
-
-df = pd.read_csv(uploaded_file)
-
-st.subheader("Uploaded Dataset Preview")
-st.dataframe(df.head())
-
-# --------------------------------------------------
-# Validate Dataset
-# --------------------------------------------------
-if "Revenue" not in df.columns:
-    st.error("Uploaded dataset must contain the target column 'Revenue'")
-    st.stop()
-
-y_test = df["Revenue"].astype(int)
-X_test = df.drop("Revenue", axis=1)
-
-# --------------------------------------------------
-# Encode Categorical Features (Using TRAIN Encoders)
-# --------------------------------------------------
-for col, encoder in encoders.items():
-    if col in X_test.columns:
-        X_test[col] = encoder.transform(X_test[col])
-
-# --------------------------------------------------
-# Scale Features (Using TRAIN Scaler)
-# --------------------------------------------------
-X_test = scaler.transform(X_test)
-
-# --------------------------------------------------
-# Model Selection
-# --------------------------------------------------
-selected_model_name = st.selectbox(
-    "Select Pretrained Model",
-    list(models.keys())
+model_choice = st.selectbox(
+    "Select Model",
+    list(models.keys()) + ["XGBoost"]
 )
 
-model = models[selected_model_name]
+if uploaded_file:
+    df_test = pd.read_csv(uploaded_file)
 
-# --------------------------------------------------
-# Prediction & Evaluation
-# --------------------------------------------------
-y_pred = model.predict(X_test)
+    # Encode categorical columns
+    for col, le in encoders.items():
+        if col in df_test.columns:
+            df_test[col] = le.transform(df_test[col])
 
-#if hasattr(model, "predict_proba"):
-#    y_prob = model.predict_proba(X_test)[:, 1]
-#else:
-#    y_prob = None
+    X_test = df_test.drop("Revenue", axis=1)
+    y_true = df_test["Revenue"]
 
-try:
-    y_pred = model.predict(X_test)
-except Exception as e:
-    st.warning("Standard prediction failed. Using safe XGBoost prediction.")
-    y_pred = model.predict(X_test, validate_features=False)
+    X_scaled = scaler.transform(X_test)
 
-if hasattr(model, "predict_proba"):
-    try:
-        y_prob = model.predict_proba(X_test)[:, 1]
-    except Exception:
-        y_prob = None
-else:
-    y_prob = None
+    # -----------------------------
+    # Prediction
+    # -----------------------------
+    if model_choice == "XGBoost":
+        dtest = xgb.DMatrix(X_scaled)
+        y_proba = xgb_booster.predict(dtest)
+        y_pred = (y_proba >= 0.5).astype(int)
+    else:
+        model = models[model_choice]
+        y_pred = model.predict(X_scaled)
+        y_proba = model.predict_proba(X_scaled)[:, 1]
 
-st.subheader(f"Evaluation Metrics – {selected_model_name}")
+    # -----------------------------
+    # Metrics
+    # -----------------------------
+    st.subheader("📊 Evaluation Metrics")
 
-st.write(f"Accuracy: {accuracy_score(y_test, y_pred):.4f}")
-st.write(f"Precision: {precision_score(y_test, y_pred):.4f}")
-st.write(f"Recall: {recall_score(y_test, y_pred):.4f}")
-st.write(f"F1 Score: {f1_score(y_test, y_pred):.4f}")
-st.write(f"MCC Score: {matthews_corrcoef(y_test, y_pred):.4f}")
+    col1, col2, col3 = st.columns(3)
 
-if y_prob is not None:
-    st.write(f"AUC Score: {roc_auc_score(y_test, y_prob):.4f}")
+    col1.metric("Accuracy", round(accuracy_score(y_true, y_pred), 4))
+    col1.metric("Precision", round(precision_score(y_true, y_pred), 4))
 
-# --------------------------------------------------
-# Confusion Matrix
-# --------------------------------------------------
-st.subheader("Confusion Matrix")
+    col2.metric("Recall", round(recall_score(y_true, y_pred), 4))
+    col2.metric("F1 Score", round(f1_score(y_true, y_pred), 4))
 
-cm = confusion_matrix(y_test, y_pred)
-fig, ax = plt.subplots()
-sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
-ax.set_xlabel("Predicted")
-ax.set_ylabel("Actual")
-st.pyplot(fig)
+    col3.metric("AUC", round(roc_auc_score(y_true, y_proba), 4))
+    col3.metric("MCC", round(matthews_corrcoef(y_true, y_pred), 4))
 
-# --------------------------------------------------
-# Classification Report
-# --------------------------------------------------
-st.subheader("Classification Report")
-st.text(classification_report(y_test, y_pred))
+    st.subheader("📉 Confusion Matrix")
+    st.write(confusion_matrix(y_true, y_pred))
