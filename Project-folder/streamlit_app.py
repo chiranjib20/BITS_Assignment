@@ -124,5 +124,5 @@ if uploaded_file:
     # --------------------------------------------------
     # Classification Report
     # --------------------------------------------------
-    st.subheader("Classification Report")
-    st.text(classification_report(y_true, y_pred))
+    #st.subheader("Classification Report")
+    #st.text(classification_report(y_true, y_pred))
