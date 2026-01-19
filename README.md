@@ -92,6 +92,8 @@ Project-folder/
 │── train_models.py
 │── requirements.txt
 │── evaluate_models.py
+│── online_shoppers_test_dataset.csv
+│── online_shoppers_train_dataset.csv
 └── model/
     └── saved_models/
         ├── logistic.pkl
