@@ -106,8 +106,8 @@ if uploaded_file:
     col3.metric("AUC", round(roc_auc_score(y_true, y_proba), 4))
     col3.metric("MCC", round(matthews_corrcoef(y_true, y_pred), 4))
 
-    st.subheader("📉 Confusion Matrix")
-    st.write(confusion_matrix(y_true, y_pred))
+    #st.subheader("📉 Confusion Matrix")
+    #st.write(confusion_matrix(y_true, y_pred))
 
     # --------------------------------------------------
     # Confusion Matrix
