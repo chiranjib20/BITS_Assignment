@@ -22,7 +22,7 @@ st.set_page_config(
 
 st.title("🛒 Online Shoppers Purchase Prediction")
 
-MODEL_DIR = "model/saved_models"
+MODEL_DIR = "Project-folder/model/saved_models"
 
 # -----------------------------
 # Load trained artifacts
