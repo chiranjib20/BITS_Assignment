@@ -34,16 +34,16 @@ st.title("Online Shoppers Purchasing Intention – Pretrained Models")
 @st.cache_resource
 def load_artifacts():
     models = {
-        "Logistic Regression": joblib.load("model/saved_models/logistic.pkl"),
-        "Decision Tree": joblib.load("model/saved_models/decision_tree.pkl"),
-        "KNN": joblib.load("model/saved_models/knn.pkl"),
-        "Naive Bayes": joblib.load("model/saved_models/naive_bayes.pkl"),
-        "Random Forest (Ensemble)": joblib.load("model/saved_models/random_forest.pkl"),
-        "XGBoost (Ensemble)": joblib.load("model/saved_models/xgboost.pkl")
+        "Logistic Regression": joblib.load("Project-folder/model/saved_models/logistic.pkl"),
+        "Decision Tree": joblib.load("Project-folder/model/saved_models/decision_tree.pkl"),
+        "KNN": joblib.load("Project-folder/model/saved_models/knn.pkl"),
+        "Naive Bayes": joblib.load("Project-folder/model/saved_models/naive_bayes.pkl"),
+        "Random Forest (Ensemble)": joblib.load("Project-folder/model/saved_models/random_forest.pkl"),
+        "XGBoost (Ensemble)": joblib.load("Project-folder/model/saved_models/xgboost.pkl")
     }
 
-    scaler = joblib.load("model/saved_models/scaler.pkl")
-    encoders = joblib.load("model/saved_models/encoders.pkl")
+    scaler = joblib.load("Project-folder/model/saved_models/scaler.pkl")
+    encoders = joblib.load("Project-folder/model/saved_models/encoders.pkl")
 
     return models, scaler, encoders
 
