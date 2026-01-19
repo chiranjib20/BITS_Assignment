@@ -104,3 +104,21 @@ if uploaded_file:
 
     st.subheader("📉 Confusion Matrix")
     st.write(confusion_matrix(y_true, y_pred))
+
+    # --------------------------------------------------
+    # Confusion Matrix
+    # --------------------------------------------------
+    st.subheader("Confusion Matrix")
+
+    cm = confusion_matrix(y_true, y_pred)
+    fig, ax = plt.subplots()
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
+    ax.set_xlabel("Predicted")
+    ax.set_ylabel("Actual")
+    st.pyplot(fig)
+
+    # --------------------------------------------------
+    # Classification Report
+    # --------------------------------------------------
+    st.subheader("Classification Report")
+    st.text(classification_report(y_true, y_pred))
