@@ -106,6 +106,23 @@ Project-folder/
 
 ## File Usage
 **streamlit_app.py**
-Purpose:
 - Acts as the main user interface of the application.
 - Provides an interactive Streamlit web app for model evaluation and prediction.
+
+**train_models.py**
+- Responsible for training all machine learning models on the dataset.
+- Splits data into 80% training and 20% internal testing.
+- This script must be executed once before running the Streamlit app.
+
+**evaluate_models.py**
+- Evaluates trained models and computes performance metrics for reporting.
+
+**requirements.txt**
+- Lists all Python dependencies required to run the project.
+- Ensures reproducibility and successful deployment on Streamlit Cloud.
+
+**online_shoppers_train_dataset.csv**
+- Data set used for model training.
+
+**online_shoppers_test_dataset.csv**
+- Test data set to be uploaded in Streamlit app to see the model's performance.
