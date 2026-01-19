@@ -24,7 +24,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🛒 Online Shoppers Purchase Prediction")
+st.title("🛒 Online Shoppers Purchase Prediction - Classification Models")
 
 MODEL_DIR = "Project-folder/model/saved_models"
 
