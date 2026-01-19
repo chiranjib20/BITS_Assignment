@@ -1,4 +1,4 @@
-# Online Shoppers Purchasing Intention – Classification Models
+# Online Shoppers Purchase Prediction - Classification Models
 
 ## Problem Statement
 
@@ -87,7 +87,7 @@ All models are pre-trained offline and loaded during runtime to ensure fast and 
 ## Project Structure
 
 ```text
-project-folder/
+Project-folder/
 │── streamlit_app.py
 │── train_models.py
 │── requirements.txt
