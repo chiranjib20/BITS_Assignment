@@ -12,7 +12,8 @@ from sklearn.metrics import (
     recall_score,
     f1_score,
     matthews_corrcoef,
-    confusion_matrix
+    confusion_matrix,
+    classification_report
 )
 
 import matplotlib.pyplot as plt
