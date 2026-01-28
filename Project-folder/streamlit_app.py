@@ -27,14 +27,6 @@ st.set_page_config(
 st.title("🛒 Online Shoppers Purchase Prediction - Classification Models")
 
 # -----------------------------
-# Sidebar - Test Dataset Download
-# -----------------------------
-st.sidebar.markdown("### Test Dataset")
-st.sidebar.markdown(
-    "[⬇️ Download Test CSV from GitHub](https://github.com/chiranjib20/BITS_Assignment/blob/main/Project-folder/online_shoppers_test_dataset.csv)"
-)
-
-# -----------------------------
 # Quick Download Link (RIGHT BELOW TITLE)
 # -----------------------------
 st.markdown(
