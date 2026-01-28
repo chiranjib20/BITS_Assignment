@@ -40,7 +40,8 @@ st.sidebar.markdown(
 st.markdown(
     "### 📥 Download Sample Test Dataset\n"
     "[Click here to download test CSV from GitHub]"
-    "(https://github.com/chiranjib20/BITS_Assignment/raw/main/Project-folder/online_shoppers_test_dataset.csv)"
+    #"(https://github.com/chiranjib20/BITS_Assignment/raw/main/Project-folder/online_shoppers_test_dataset.csv)"
+    "(https://github.com/chiranjib20/BITS_Assignment/blob/main/Project-folder/online_shoppers_test_dataset.csv)"
 )
 
 MODEL_DIR = "Project-folder/model/saved_models"
